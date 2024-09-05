@@ -37,15 +37,12 @@ def main():
         print("Abriu a comunicação")
         
         #prevenção de erros
-        print("Verificando se o servidor está vivo")
         time.sleep(.2)
         com1.sendData(b'00')
         time.sleep(1)   
-        # print(com1.getData(1))
                 
         ##### VERIFICAR SE O SERVIDOR ESTÁ VIVO #####
-        # print("Verificando se o servidor está vivo")
-        com1.sendData(b'01')  ##SUBSTITUIR PELO PRIMEIRO PACOTE a ser enviado
+        print("Verificando se o servidor está vivo")
         # Espera resposta do servidor
         verifica = True
         start_time = time.time()
