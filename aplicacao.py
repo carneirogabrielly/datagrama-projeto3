@@ -12,7 +12,7 @@
 
 from enlace import *
 import time
-import numpy as np
+import numpy as nps
 from utils import *
 
 # voce deverá descomentar e configurar a porta com através da qual ira fazer comunicaçao
@@ -36,35 +36,36 @@ def main():
         com1.enable()
         print("Abriu a comunicação")
         
-        # #prevenção de erros
-        # com1.enable()
-        # time.sleep(.2)
-        # com1.sendData(b'00')
-        # time.sleep(1)   
+        #prevenção de erros
+        print("Verificando se o servidor está vivo")
+        time.sleep(.2)
+        com1.sendData(b'00')
+        time.sleep(1)   
+        # print(com1.getData(1))
                 
         ##### VERIFICAR SE O SERVIDOR ESTÁ VIVO #####
-        print("Verificando se o servidor está vivo")
+        # print("Verificando se o servidor está vivo")
         com1.sendData(b'01')  ##SUBSTITUIR PELO PRIMEIRO PACOTE a ser enviado
         # Espera resposta do servidor
         verifica = True
-        # start_time = time.time()
-        # while verifica:
-        #     tam = com1.rx.getBufferLen()
-        #     atraso = time.time() - start_time
-        #     if tam >= 4:
-        #         print("Servidor está ativo.")
-        #         break
-        #     else:
-        #         if atraso >= 5:
-        #             resposta = input("Servidor Inativo. Tentar novamente? s/n?").lower()
-        #             if resposta == 's':
-        #                 com1.sendData(b'01')  ###vai substituir pelo pacote
-        #                 print("Verificando se o servidor está vivo")
-        #                 start_time = time.time()
-        #             elif resposta == 'n':
-        #                 print("Encerrando comunicação")
-        #                 com1.disable()
-        #                 verifica = False
+        start_time = time.time()
+        while verifica:
+            tam = com1.rx.getBufferLen()
+            atraso = time.time() - start_time
+            if tam >= 1:
+                print("Servidor está ativo.")
+                break
+            else:
+                if atraso >= 5:
+                    resposta = input("Servidor Inativo. Tentar novamente? s/n?").lower()
+                    if resposta == 's':
+                        com1.sendData(b'01')  ###vai substituir pelo pacote
+                        print("Verificando se o servidor está vivo")
+                        start_time = time.time()
+                    elif resposta == 'n':
+                        print("Encerrando comunicação")
+                        com1.disable()
+                        verifica = False
         
         #aqui você deverá gerar os dados a serem transmitidos. 
         
@@ -73,7 +74,7 @@ def main():
         
         #########AQUI VOU CHAMAR A FUNÇÃO QUE CRIA OS PACOTES#########
         #Vai me devolver uma lista de pacotes
-        pacotes = [bytearray(2)]
+        pacotes = fragmenta(mensagem)
         
         while verifica:
             for i in range(len(pacotes)):

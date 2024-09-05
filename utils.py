@@ -1,7 +1,7 @@
 from aplicacao import *
 from enlace import enlace
 
-getData = enlace.getData()
+# getData = enlace.getData()
 
 def fragmenta(mensagem : bytes):
     tamanho = len(mensagem)
