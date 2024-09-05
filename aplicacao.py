@@ -13,6 +13,7 @@
 from enlace import *
 import time
 import numpy as np
+from utils import *
 
 # voce deverá descomentar e configurar a porta com através da qual ira fazer comunicaçao
 #   para saber a sua porta, execute no terminal :
@@ -22,9 +23,9 @@ import numpy as np
 #use uma das 3 opcoes para atribuir à variável a porta usada
 #serialName = "/dev/ttyACM0"           # Ubuntu (variacao de)
 #serialName = "/dev/tty.usbmodem1411" # Mac    (variacao de)
-serialName = "COM11"                  # Windows(variacao de)
+serialName = "COM15"                  # Windows(variacao de)
 
-
+imageW = 'imgs/img.png'
 def main():
     try:
         print("Iniciou o main")
@@ -36,49 +37,54 @@ def main():
         # Ativa comunicacao. Inicia os threads e a comunicação seiral 
         com1.enable()
         #Se chegamos até aqui, a comunicação foi aberta com sucesso. Faça um print para informar.
+
         print("Abriu a comunicação")
-        
+        print("esperando 1 byte de sacrifício")
+        rxBuffer, nRx = com1.getData(1)
+        com1.rx.clearBuffer()
+        time.sleep(.1)
            
-                  
-        #aqui você deverá gerar os dados a serem transmitidos. 
-        #seus dados a serem transmitidos são um array bytes a serem transmitidos. Gere esta lista com o 
-        #nome de txBuffer. Esla sempre irá armazenar os dados a serem enviados.
-        
-        #txBuffer = imagem em bytes!
-        txBuffer = b'\x12\x13\xAA'  #isso é um array de bytes
-       
-        print("meu array de bytes tem tamanho {}" .format(len(txBuffer)))
-        #faça aqui uma conferência do tamanho do seu txBuffer, ou seja, quantos bytes serão enviados.
-       
-            
-        #finalmente vamos transmitir os todos. Para isso usamos a funçao sendData que é um método da camada enlace.
-        #faça um print para avisar que a transmissão vai começar.
-        #tente entender como o método send funciona!
-        #Cuidado! Apenas trasmita arrays de bytes!
-               
-        
-        com1.sendData(np.asarray(txBuffer))  #as array apenas como boa pratica para casos de ter uma outra forma de dados
-          
-        # A camada enlace possui uma camada inferior, TX possui um método para conhecermos o status da transmissão
-        # O método não deve estar fincionando quando usado como abaixo. deve estar retornando zero. Tente entender como esse método funciona e faça-o funcionar.
-        txSize = com1.tx.getStatus()
-        print('enviou = {}' .format(txSize))
-        
-        #Agora vamos iniciar a recepção dos dados. Se algo chegou ao RX, deve estar automaticamente guardado
-        #Observe o que faz a rotina dentro do thread RX
-        #print um aviso de que a recepção vai começar.
-        
-        #Será que todos os bytes enviados estão realmente guardadas? Será que conseguimos verificar?
-        #Veja o que faz a funcao do enlaceRX  getBufferLen
-      
-        #acesso aos bytes recebidos
-        txLen = len(txBuffer)
-        rxBuffer, nRx = com1.getData(txLen)
-        print("recebeu {} bytes" .format(len(rxBuffer)))
-        
-        for i in range(len(rxBuffer)):
-            print("recebeu {}" .format(rxBuffer[i]))
-        
+       #-------- VERIFICANDO SE ESTÁ ATIVO ------------
+        com1.sendData(b'01') #confirmando que estou vivo
+
+        #---------RECEBENDO AS MENSAGENS -------------
+        lista_payload = []
+        head, payload, eop = carrega_pacote(com1)
+        print('epa')
+        tamanho_da_mensagem = head[0]
+
+        verifica = verifica_pack(head,eop, 1)
+        print(verifica)
+        if verifica:
+                lista_payload.append(payload)
+                pacote = make_pack_server(verifica)
+                com1.sendData(pacote)
+        else:
+            pacote = make_pack_server(verifica)
+            com1.sendData(pacote)
+        print('passou')
+        for i in range(tamanho_da_mensagem - 1):
+            head, payload, eop = carrega_pacote(com1)
+            verifica = verifica_pack(head, eop, i+2)
+            if verifica:
+                lista_payload.append(payload)
+                pacote = make_pack_server(verifica)
+                com1.sendData(pacote)
+            else:
+                pacote = make_pack_server(verifica)
+                com1.sendData(pacote)
+                
+
+        payload_completo = b''.join(lista_payload)
+        f = open(imageW, 'wb')
+        f.write(payload_completo)
+        #fecha arquivo de imagem
+        f.close()
+
+
+
+
+
 
             
     
