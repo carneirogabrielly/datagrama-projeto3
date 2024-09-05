@@ -71,7 +71,9 @@ def main():
         
         #########AQUI VOU CHAMAR A FUNÇÃO QUE CRIA OS PACOTES#########
         #Vai me devolver uma lista de pacotes
-        pacotes = fragmenta(mensagem)
+        fragmentos = fragmenta(mensagem)
+        print(fragmentos)
+        pacotes = make_pack(fragmentos)
         
         while verifica:
             for i in range(len(pacotes)):
@@ -79,7 +81,7 @@ def main():
                 com1.sendData(pacotes[i])
                 #esperar a resposta
                 #pegar o head
-                head, nHead = com1.getData(12)
+                head, _, eop = carrega_pacote(com1)
                 #verificar o head
                 if head[3] == 0:
                     print("Pacote {} enviado com sucesso" .format(i))
@@ -87,6 +89,7 @@ def main():
                     print(f"Erro com o pacote {i}")
                     verifica = False
                     break
+            verifica = False
             
         # Encerra comunicação
         print("-------------------------")
