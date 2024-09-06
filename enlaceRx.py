@@ -74,7 +74,7 @@ class RX(object):
             atraso = time.time() - start_time
             if atraso >= 5:
                 print("Time out: Nenhuma resposta do servidor")
-                return(None)           
+                return(None)         
         return(self.getBuffer(size))
 
 

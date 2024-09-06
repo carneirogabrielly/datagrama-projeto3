@@ -46,7 +46,12 @@ def make_pack(fragmentos : list):
 
         head[0] = len(fragmentos)  # Número total de fragmentos (máximo 255)
         head[1] = i + 1  # Índice do fragmento (começa do 1)
+        
+        #------------------------- erro de tamanho payload ------------------#
         head[2] = len(fragmento)  # Tamanho do fragmento (máximo 255)
+        # head[2] = 2  # Tamanho do fragmento (máximo 255)
+        
+        
         head[3] = 0  # Outro campo, ajuste conforme necessário
 
         payload = fragmento  # O fragmento como payload

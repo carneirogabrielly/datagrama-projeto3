@@ -41,9 +41,13 @@ def main():
         com1.sendData(b'00')
         time.sleep(1)   
                 
-        ##### VERIFICAR SE O SERVIDOR ESTÁ VIVO #####
+                
+                
+                
+         ##### VERIFICAR SE O SERVIDOR ESTÁ VIVO #####
         print("Verificando se o servidor está vivo")
         # Espera resposta do servidor
+        pacote0 = make_pack_server(True)
         verifica = True
         start_time = time.time()
         while verifica:
@@ -56,13 +60,15 @@ def main():
                 if atraso >= 5:
                     resposta = input("Servidor Inativo. Tentar novamente? s/n?").lower()
                     if resposta == 's':
-                        com1.sendData(b'01')  ###vai substituir pelo pacote
+                        com1.sendData(pacote0)  ###vai substituir pelo pacote
                         print("Verificando se o servidor está vivo")
                         start_time = time.time()
                     elif resposta == 'n':
                         print("Encerrando comunicação")
                         com1.disable()
                         verifica = False
+                        
+        com1.rx.clearBuffer()
         
         #aqui você deverá gerar os dados a serem transmitidos. 
         
@@ -72,23 +78,41 @@ def main():
         #########AQUI VOU CHAMAR A FUNÇÃO QUE CRIA OS PACOTES#########
         #Vai me devolver uma lista de pacotes
         fragmentos = fragmenta(mensagem)
-        print(fragmentos)
         pacotes = make_pack(fragmentos)
         
         while verifica:
             for i in range(len(pacotes)):
                 #vou enviar o pacote
-                com1.sendData(pacotes[i])
+                
+                #------------------------ erro ordem do pacote ---------------------------------#
+                com1.sendData(pacotes[i+1])
+                # com1.sendData(pacotes[i])
+                #------------------------------------------------------------------------------#
                 #esperar a resposta
                 #pegar o head
-                head, _, eop = carrega_pacote(com1)
-                #verificar o head
-                if head[3] == 0:
-                    print("Pacote {} enviado com sucesso" .format(i))
-                else:
-                    print(f"Erro com o pacote {i}")
-                    verifica = False
-                    break
+                
+                
+                #### ------------------ tentativa de A+ -------------------------------#
+                print(com1.rx.getBufferLen())
+                time0 = time.time()
+                while (com1.rx.getBufferLen() < 15):
+                    atraso1 = time.time() - time0
+                    if atraso1 > 2:
+                        com1.sendData(pacotes[i])
+                        time.sleep(1)
+                   
+                    
+                #----------------------------------------------------------------------#
+                if com1.rx.getBufferLen() >= 15:    
+                    head, _, eop = carrega_pacote(com1)
+                    #verificar o head
+                    if head[3] == 0:
+                        print("Pacote {} enviado com sucesso" .format(i+1))
+                    else:
+                        print(f"Erro com o pacote {i+1}")
+                        verifica = False
+                        break
+                    
             verifica = False
             
         # Encerra comunicação
@@ -106,10 +130,3 @@ def main():
     #so roda o main quando for executado do terminal ... se for chamado dentro de outro modulo nao roda
 if __name__ == "__main__":
     main()
-
-"""
-# --------------------- erros a serem corrigidos
-quando da getData ele dá erro pq retorna none no getNdata
-
-
-"""
