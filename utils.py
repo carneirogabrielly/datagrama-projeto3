@@ -1,6 +1,6 @@
 from aplicacao import *
 from enlace import enlace
-
+import time
 #getData = enlace.getData()
 
 
@@ -23,9 +23,9 @@ def fragmenta(mensagem: bytes):
 
 def carrega_pacote(com1):
     head, tamanho_head = com1.getData(12)
-    print(head[2])
     tamanho_payload = head[2]
-        #pegando o payload
+    #pegando o payload
+
     payload,_ = com1.getData(tamanho_payload)
         #pegando o eop
     eop,_ = com1.getData(3)
@@ -63,7 +63,7 @@ def verifica_pack(head, eop, numero_esperado):
     if numero_esperado != numero_pacote:
         print("ERRO -- Ordem errada de pacote")
         return False
-    if eop != b'\x46\x49\x4D':
+    elif eop != b'\x46\x49\x4D':
         print("ERRO -- tamanho do payload diferente")
         return False
     return True
@@ -71,12 +71,12 @@ def verifica_pack(head, eop, numero_esperado):
 def make_pack_server(verifica):
     head = bytearray(12)
     eop = b'\x46\x49\x4D'
-    print(verifica)
     if verifica:
         head[3] = 0
     else:
         head[3] = 1
     pacote = bytearray(head) + eop
+
     return pacote
     
         

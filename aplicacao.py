@@ -14,6 +14,7 @@ from enlace import *
 import time
 import numpy as np
 from utils import *
+from enlaceRx import *
 
 # voce deverá descomentar e configurar a porta com através da qual ira fazer comunicaçao
 #   para saber a sua porta, execute no terminal :
@@ -42,19 +43,17 @@ def main():
         print("esperando 1 byte de sacrifício")
         rxBuffer, nRx = com1.getData(1)
         com1.rx.clearBuffer()
-        time.sleep(.1)
+        time.sleep(1)
            
        #-------- VERIFICANDO SE ESTÁ ATIVO ------------
-        com1.sendData(b'01') #confirmando que estou vivo
-
+        pacote0 = com1.sendData(make_pack_server(True))
+        com1.rx.clearBuffer()
         #---------RECEBENDO AS MENSAGENS -------------
         lista_payload = []
         head, payload, eop = carrega_pacote(com1)
-        print('epa')
         tamanho_da_mensagem = head[0]
 
         verifica = verifica_pack(head,eop, 1)
-        print(verifica)
         if verifica:
                 lista_payload.append(payload)
                 pacote = make_pack_server(verifica)
@@ -62,32 +61,41 @@ def main():
         else:
             pacote = make_pack_server(verifica)
             com1.sendData(pacote)
-        print('passou')
-        for i in range(tamanho_da_mensagem - 1):
-            head, payload, eop = carrega_pacote(com1)
-            verifica = verifica_pack(head, eop, i+2)
-            if verifica:
-                lista_payload.append(payload)
-                pacote = make_pack_server(verifica)
-                com1.sendData(pacote)
-            else:
-                pacote = make_pack_server(verifica)
-                com1.sendData(pacote)
-                
+        print('Recebi pacote 1')
 
-        payload_completo = b''.join(lista_payload)
-        f = open(imageW, 'wb')
-        f.write(payload_completo)
-        #fecha arquivo de imagem
-        f.close()
+        if verifica:
+            for i in range(tamanho_da_mensagem - 1):
 
+                # time.sleep(.1)
+                # print(com1.rx.getBufferLen())
+                # start_time = time.time()
+                # while (com1.rx.getBufferLen() < 15):
+                #     atraso = time.time() - start_time
+                #     if atraso > 5:
+                #         com1.sendData(pacote)
+                #         com1.rx.clearBuffer()
+                #         time.sleep(1)
+                    
 
+                head, payload, eop = carrega_pacote(com1)
+                print(head)
+                verifica = verifica_pack(head, eop, i+2)
+                if verifica:
+                    lista_payload.append(payload)
+                    pacote = make_pack_server(verifica)
+                    com1.sendData(pacote)
+                    print(pacote)
+                else:
+                    pacote = make_pack_server(verifica)
+                    com1.sendData(pacote)
+                print(f'Recebi pacote {i+2}')
 
+            payload_completo = b''.join(lista_payload)
+            f = open(imageW, 'wb')
+            f.write(payload_completo)
+            #fecha arquivo de imagem
+            f.close()
 
-
-
-            
-    
         # Encerra comunicação
         print("-------------------------")
         print("Comunicação encerrada")
