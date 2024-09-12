@@ -24,71 +24,75 @@ from enlaceRx import *
 #use uma das 3 opcoes para atribuir à variável a porta usada
 #serialName = "/dev/ttyACM0"           # Ubuntu (variacao de)
 #serialName = "/dev/tty.usbmodem1411" # Mac    (variacao de)
-serialName = "COM15"                  # Windows(variacao de)
+serialName = "COM3"                  # Windows(variacao de)
 
 imageW = 'imgs/img.png'
 def main():
     try:
         print("Iniciou o main")
-        #declaramos um objeto do tipo enlace com o nome "com". Essa é a camada inferior à aplicação. Observe que um parametro
-        #para declarar esse objeto é o nome da porta.
         com1 = enlace(serialName)
         
     
         # Ativa comunicacao. Inicia os threads e a comunicação seiral 
         com1.enable()
-        #Se chegamos até aqui, a comunicação foi aberta com sucesso. Faça um print para informar.
-
         print("Abriu a comunicação")
-        print("esperando 1 byte de sacrifício")
-        rxBuffer, nRx = com1.getData(1)
+        
+        #-------prevenção de erro -----------#
+        # print("esperando 1 byte de sacrifício")
+        # rxBuffer, nRx = com1.getData(1)
+        #------------------------------------#
+        
         com1.rx.clearBuffer()
-        time.sleep(1)
            
        #-------- VERIFICANDO SE ESTÁ ATIVO ------------
-        pacote0 = com1.sendData(make_pack_server(True))
+        handshake = True
+        while handshake:
+            tam = com1.rx.getBufferLen()
+            time.sleep(1)
+            if tam >= 1:
+                print("Recebi mensagem do cliente")
+                print("Enviando confirmação de atividade")
+                com1.sendData(make_pack_server(True))
+                handshake = False
+                
         com1.rx.clearBuffer()
         #---------RECEBENDO AS MENSAGENS -------------
         lista_payload = []
-        head, payload, eop = carrega_pacote(com1)
-        tamanho_da_mensagem = head[0]
-
-        verifica = verifica_pack(head,eop, 1)
-        if verifica:
-                lista_payload.append(payload)
-                pacote = make_pack_server(verifica)
-                com1.sendData(pacote)
-        else:
-            pacote = make_pack_server(verifica)
-            com1.sendData(pacote)
-        print('Recebi pacote 1')
-
-        if verifica:
-            for i in range(tamanho_da_mensagem - 1):
-
-                # time.sleep(.1)
-                # print(com1.rx.getBufferLen())
-                # start_time = time.time()
-                # while (com1.rx.getBufferLen() < 15):
-                #     atraso = time.time() - start_time
-                #     if atraso > 5:
-                #         com1.sendData(pacote)
-                #         com1.rx.clearBuffer()
-                #         time.sleep(1)
-                    
-
+        contador = 1
+        recebendo = True
+        
+        while recebendo:
+            
+            time.sleep(0.2)
+            
+            tam = com1.rx.getBufferLen()
+            
+            if ( tam >= 15):    
                 head, payload, eop = carrega_pacote(com1)
-                print(head)
-                verifica = verifica_pack(head, eop, i+2)
-                if verifica:
+                tamanho_da_mensagem = head[0]
+                verifica = verifica_pack(head,eop, contador)
+                if verifica == True:
                     lista_payload.append(payload)
-                    pacote = make_pack_server(verifica)
+                    pacote = make_pack_server(True)
                     com1.sendData(pacote)
-                    print(pacote)
-                else:
-                    pacote = make_pack_server(verifica)
+                    print(f'recebi o pacote {contador} corretamente')
+                    contador +=1 
+                elif verifica == False:
+                    pacote = make_pack_server(False)
                     com1.sendData(pacote)
-                print(f'Recebi pacote {i+2}')
+                    print(f'recebi o pacote {contador} com erro')
+                 
+                if contador == tamanho_da_mensagem +1:
+                    recebendo = False
+        
+            else:
+                time0 = time.time()
+                print(f'o tamanho do bufer foi {tam}')
+                while (com1.rx.getBufferLen() < 15):
+                    atraso1 = time.time() - time0
+                    if atraso1 > 20:
+                        print(f'Cliente desconectou. Recebimento interrompido')
+                        recebendo = False
 
             payload_completo = b''.join(lista_payload)
             f = open(imageW, 'wb')
